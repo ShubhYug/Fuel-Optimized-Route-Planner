@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Fuel-Optimized Route Planner</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: "Segoe UI", sans-serif;
+            background-color: #f2f4f8;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            background: #fff;
+            padding: 30px 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        h2, h3, h4 {
+            color: #333;
+        }
+
+        label {
+            font-weight: 600;
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 10px 12px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #result {
+            margin-top: 30px;
+            display: none;
+        }
+
+        .info {
+            background: #f8f9fa;
+            border-left: 4px solid #007bff;
+            padding: 16px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+
+        ul#fuelStops {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        ul#fuelStops li {
+            padding: 10px;
+            background-color: #e9ecef;
+            border-radius: 6px;
+            margin-bottom: 8px;
+        }
+
+        a#mapsLink {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        a#mapsLink:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Fuel-Optimized Route Planner</h2>
+        <form id="routeForm">
+            <label for="start">Start Location</label>
+            <input type="text" id="start" name="start" value="Chicago, IL" required>
+
+            <label for="finish">Destination</label>
+            <input type="text" id="finish" name="finish" value="Denver, CO" required>
+
+            <button type="submit">Get Route</button>
+        </form>
+
+        <div id="result">
+            <div class="info">
+                <h3>🗺️ Route Summary</h3>
+                <p><strong>From:</strong> <span id="fromCity"></span></p>
+                <p><strong>To:</strong> <span id="toCity"></span></p>
+                <p><strong>Distance:</strong> <span id="distance"></span> miles</p>
+                <p><strong>Duration:</strong> <span id="duration"></span> hours</p>
+                <p><strong>Total Fuel Cost:</strong> $<span id="fuelCost"></span></p>
+                <p><a id="mapsLink" href="#" target="_blank">Open in Google Maps</a></p>
+            </div>
+
+            <div class="info">
+                <h4>⛽ Fuel Stops</h4>
+                <ul id="fuelStops"></ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById("routeForm").addEventListener("submit", function (e) {
+            e.preventDefault();
+            const start = document.getElementById("start").value;
+            const finish = document.getElementById("finish").value;
+
+            fetch("/api/route/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ start, finish })
+            })
+            .then(async res => {
+                if (!res.ok) {
+                    const errorText = await res.text();
+                    throw new Error(errorText);
+                }
+                return res.json();
+            })
+            .then(data => {
+                document.getElementById("result").style.display = "block";
+                document.getElementById("fromCity").textContent = data.start;
+                document.getElementById("toCity").textContent = data.finish;
+                document.getElementById("distance").textContent = data.distance_miles;
+                document.getElementById("duration").textContent = data.duration_hours;
+                document.getElementById("fuelCost").textContent = data.total_fuel_cost_usd;
+                document.getElementById("mapsLink").href = data.google_maps_link;
+
+                const fuelStopsList = document.getElementById("fuelStops");
+                fuelStopsList.innerHTML = "";
+                data.fuel_stops.forEach(stop => {
+                    const li = document.createElement("li");
+                    li.textContent = `${stop.station_name} — $${stop.fuel_price}/gal — ${stop.gallons} gal — $${stop.cost}`;
+                    fuelStopsList.appendChild(li);
+                });
+            })
+            .catch(err => {
+                alert("API error: " + err.message);
+            });
+        });
+    </script>
+</body>
+</html>
