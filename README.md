@@ -70,7 +70,13 @@ FUEL_STOP_RADIUS_MILES=200
 ```bash
 python3 manage.py run server
 ```
-5.Now, you can access the app at
+
+5. Docker (optional)
+
+```bash
+docker compose up --build
+```
+6. Now, you can access the app at
 ```bash
 http://127.0.0.1:8000/api/
 ```
